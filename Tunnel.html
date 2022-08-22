@@ -1,0 +1,98 @@
+<script id="fragmentShader" type="x-shader/fragment">
+    /**
+     * Original shader code by Soulman
+     * https://stackoverflow.com/a/5493122/388201
+     **/
+      
+    precision highp float;
+    
+    const float PI = 3.14159265358979323846264;
+    const float TWOPI = PI*2.0;
+    
+    const vec4 WHITE = vec4(0.9, 0.9, 0.9, 1.0);
+    const vec4 BLACK = vec4(0.0, 0.0, 0.0, 1.0);
+    
+    const vec2 CENTER = vec2(0.0, 0.0);
+    
+    const int MAX_RINGS = 100;
+    
+    uniform float time;
+    uniform float width;
+    uniform float height;
+    uniform float ringDistance;
+    uniform int maxRings;
+    uniform float waveCount;
+    uniform float waveDepth;
+    uniform float yCenter;
+    uniform float direction;
+      
+    void main(void) {
+        float rot = time*0.006;
+        float vmin = min(width, height);
+        vec2 position = vec2(- (width / 2.0) + gl_FragCoord.x, 
+                             - (height / 2.0) + gl_FragCoord.y) / (vmin / 2.0);
+        float x = position.x;
+        float y = position.y;
+    
+        bool white = false;
+        float prevRingDist = ringDistance;
+        for (int i = 0; i < MAX_RINGS; i++) {
+            vec2 center = vec2(0.0, yCenter - ringDistance * float(i)*direction);
+            float radius = 0.5 + ringDistance / (pow(float(i+5), 1.1)*0.006);
+            float dist = distance(center, position);
+            dist = pow(dist, 1.0/3.0);
+            float ringDist = abs(dist-radius);
+            if (ringDist < ringDistance*prevRingDist*7.0) {
+                float angle = atan(y - center.y, x - center.x);
+                float thickness = 1.1 * abs(dist - radius) / prevRingDist;
+                float depthFactor = waveDepth * sin((angle+rot*radius) * waveCount); 
+                if (dist > radius) {
+                    white = (thickness < ringDistance * 5.0 - depthFactor * 2.0);
+                }
+                else {
+                    white = (thickness < ringDistance * 5.0 + depthFactor);
+                }
+                break;
+            }
+            if (dist > radius || i >= maxRings) break;
+            prevRingDist = ringDist;
+        }
+    
+        gl_FragColor = white ? WHITE : BLACK;
+    }
+    </script>
+    
+    <script id="vertexShader" type="x-shader/vertex">
+    precision mediump float;
+    attribute vec2 position;
+    
+    void main () {
+      gl_Position = vec4(position, 0, 1);
+    } 
+    </script>
+    <div class="ui">
+      <div class="ui__field">
+        <label for="ringDistance">Ring Distance</label>
+        <input id="ringDistance" type="range" min="0.04" max="0.06" value="0.05" step="0.00125">
+      </div>
+      <div class="ui__field">
+        <label for="maxRings">Max Rings</label>
+        <input id="maxRings" type="range" min="2" max="50" value="30" step="1" />
+      </div>
+      <div class="ui__field">
+        <label for="waveCount">Wave Count</label>
+        <input id="waveCount" type="range" min="2" max="100" value="60" step="1" />
+      </div>
+      <div class="ui__field">
+        <label for="waveDepth">Wave Depth</label>
+        <input id="waveDepth" type="range" min="0.01" max="0.2" value="0.04" step="0.005" />
+      </div>
+      <div class="ui__field">
+        <label for="yCenter">Y center</label>
+        <input id="yCenter" type="range" min="0.00" max="3.0" value="0.8" step="0.1" />
+      </div>
+      <div class="ui__field">
+        <label for="direction">Direction</label>
+        <input id="direction" type="range" min="-3.0" max="3.0" value="1.2" step="0.1" />
+      </div>
+    </div>
